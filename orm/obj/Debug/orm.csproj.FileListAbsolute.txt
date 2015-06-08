@@ -1,0 +1,9 @@
+D:\Колесо на коленке\core\orm\bin\Debug\zhichkin.orm.dll
+D:\Колесо на коленке\core\orm\bin\Debug\zhichkin.orm.pdb
+D:\Колесо на коленке\core\orm\obj\Debug\zhichkin.orm.dll
+D:\Колесо на коленке\core\orm\obj\Debug\zhichkin.orm.pdb
+D:\Колесо на коленке\core\orm\obj\Debug\orm.csprojResolveAssemblyReference.cache
+D:\Колесо на коленке\orm\orm\bin\Debug\zhichkin.orm.dll
+D:\Колесо на коленке\orm\orm\bin\Debug\zhichkin.orm.pdb
+D:\Колесо на коленке\orm\orm\obj\Debug\zhichkin.orm.dll
+D:\Колесо на коленке\orm\orm\obj\Debug\zhichkin.orm.pdb
