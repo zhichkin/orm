@@ -25,44 +25,34 @@ namespace zhichkin
                 }
             }
 
-            public bool Find(Type type, ISerializable key, ref Entity item)
+            public bool Find(Type type, Guid key, ref Entity item)
             {
-                Guid guid = new Guid(key.ToString());
-
-                bool ok = cash.TryGetValue(guid, out item);
-
-                return ok;
+                return cash.TryGetValue(key, out item);
             }
 
-            private void NewEntity_StateChanged<TKey>(IPersistent<TKey> sender, StateEventArgs args)
-                where TKey : ISerializable, new()
+            private void NewEntity_StateChanged(object sender, StateEventArgs args)
             {
                 if (args.OldState == PersistenceState.New && args.NewState == PersistenceState.Original)
                 {
                     Entity entity = (Entity)sender;
 
-                    Guid key = new Guid(entity.Key.ToString());
+                    cash.Add(entity.Key, (Entity)sender);
 
-                    cash.Add(key, (Entity)sender);
+                    entity.StateChanged -= NewEntity_StateChanged;
 
-                    sender.StateChanged -= NewEntity_StateChanged;
-
-                    sender.StateChanged += Entity_StateChanged;
+                    entity.StateChanged += Entity_StateChanged;
                 }
             }
 
-            private void Entity_StateChanged<TKey>(IPersistent<TKey> sender, StateEventArgs args)
-                where TKey : ISerializable, new()
+            private void Entity_StateChanged(object sender, StateEventArgs args)
             {
                 if (args.NewState == PersistenceState.Deleted)
                 {
                     Entity entity = (Entity)sender;
 
-                    Guid key = new Guid(entity.Key.ToString());
+                    cash.Remove(entity.Key);
 
-                    cash.Remove(key);
-
-                    sender.StateChanged -= Entity_StateChanged;
+                    entity.StateChanged -= Entity_StateChanged;
                 }
             }
         }

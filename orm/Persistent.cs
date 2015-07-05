@@ -11,7 +11,6 @@ namespace zhichkin
     namespace orm
     {
         public abstract class Persistent<TKey> : IPersistent<TKey>
-            where TKey : ISerializable, new()
         {
             protected IContext context;
 
@@ -19,58 +18,76 @@ namespace zhichkin
             protected int discriminator = -1;
             protected PersistenceState state = PersistenceState.New;
 
-            // Constructors
+            # region " Constructors "
 
             protected Persistent()
             {
                 this.context = Context.Current;
             }
 
-            protected Persistent(ISerializable key) : base()
+            protected Persistent(TKey key) : this()
             {
-                if (key == null) throw new ArgumentNullException("key");
-
-                this.key = (TKey)key;
+                this.key = key;
             }
 
+            protected Persistent(TKey key, PersistenceState state) : this(key)
+            {
+                if (state == PersistenceState.Original || state == PersistenceState.Changed) throw new ArgumentOutOfRangeException("state");
+                this.state = (state == PersistenceState.New || state == PersistenceState.Loading || state == PersistenceState.Deleted) ? state : PersistenceState.Virtual;
+            }
+
+            # endregion
+
             public TKey Key { get { return key; } }
-            public PersistenceState State { get { return state; } }
+            public PersistenceState State
+            {
+                get { return state; }
+                set
+                {
+                    if (value != PersistenceState.Original) throw new ArgumentOutOfRangeException("state");
+                    if (state != PersistenceState.Loading) throw new NotSupportedException("The state has to be Loading!");
+                    state = value;
+                }
+            }
             public virtual int Discriminator { get { return discriminator; } }
 
             protected void Set<TValue>(TValue value, ref TValue storage)
             {
-                if (state == PersistenceState.Loading) { storage = value; return; }
+                if (state == PersistenceState.Deleted) return;
 
-                if (state == PersistenceState.Deleted) return; // throw exception ?
+                if (state == PersistenceState.New || state == PersistenceState.Loading || state == PersistenceState.Changed)
+                {
+                    storage = value; return;
+                }
 
                 LazyLoad(); // this code is executed for Virtual state of persistent objects
 
-                // The code below is executed for New, Changed and Original states of persistent objects
+                // The code below is executed for Original state only
+
+                if (state != PersistenceState.Original) return;
 
                 bool changed = false;
 
                 if (storage != null)
+                {
                     changed = !storage.Equals(value);
+                }
                 else
+                {
                     changed = (value != null);
+                }
 
                 if (changed)
                 {
                     StateEventArgs args = new StateEventArgs(PersistenceState.Original, PersistenceState.Changed);
 
-                    if (state == PersistenceState.Original)
-                    {
-                        OnStateChanging(args);
-                    }
-
+                    OnStateChanging(args);
+                    
                     storage = value;
 
-                    if (state == PersistenceState.Original)
-                    {
-                        state = PersistenceState.Changed;
+                    state = PersistenceState.Changed;
 
-                        OnStateChanged(args);
-                    }
+                    OnStateChanged(args);
                 }
             }
 
@@ -81,8 +98,8 @@ namespace zhichkin
 
             # region " state events handling "
 
-            public event StateChangedEventHandler<TKey> StateChanged;
-            public event StateChangingEventHandler<TKey> StateChanging;
+            public event StateChangedEventHandler StateChanged;
+            public event StateChangingEventHandler StateChanging;
 
             protected void OnStateChanging(StateEventArgs args)
             {
@@ -91,11 +108,21 @@ namespace zhichkin
 
             protected void OnStateChanged(StateEventArgs args)
             {
+                if (args.OldState == PersistenceState.Changed && args.NewState == PersistenceState.Original)
+                {
+                    UpdateKeyValues();
+                }
                 if (StateChanged != null) StateChanged(this, args);
             }
 
-            # endregion
+            protected virtual void UpdateKeyValues()
+            {
+                // compound keys can have fields changeable by user code
+                // when changed key is stored to the database object's key values in memory must be synchronized
+            }
 
+            # endregion
+            
             private void LazyLoad() { if (state == PersistenceState.Virtual) Load(); }
 
             # region " ActiveRecord "
@@ -172,113 +199,18 @@ namespace zhichkin
 
             public virtual void Serialize(BinaryWriter stream)
             {
-                context.Factory.Serialize(stream, discriminator);
-                key.Serialize(stream);
-                context.Factory.Serialize(stream, (byte)state);
+                stream.Write(discriminator);
+                stream.Write((byte)state);                
             }
 
             public virtual void Deserialize(BinaryReader stream)
             {
-                int test = 0; context.Factory.Deserialize(stream, ref test);
+                int test = stream.ReadInt32();
                 if (test != discriminator) throw new ArgumentException("discriminator");
-                key.Deserialize(stream);
-                byte _state = 0; context.Factory.Deserialize(stream, ref _state); state = (PersistenceState)_state;
+                state = (PersistenceState)stream.ReadByte();
             }
 
             # endregion
-        }
-
-        //
-
-        public sealed class Identity : ISerializable
-        {
-            private Factory formatter = Context.Current.Factory;
-
-            private Guid value = Guid.NewGuid();
-
-            public Identity() { }
-
-            public Identity(Guid value) { this.value = value; }
-
-            public Guid Value { get { return value; } }
-
-            public void Serialize(BinaryWriter stream) { formatter.Serialize(stream, value); }
-            public void Deserialize(BinaryReader stream) { formatter.Deserialize(stream, ref value); }
-
-            public override string ToString() { return value.ToString(); }
-
-            # region " Переопределение методов сравнения "
-
-            public override Int32 GetHashCode() { return value.GetHashCode(); }
-
-            public override Boolean Equals(Object obj)
-            {
-                if (obj == null) { return false; }
-
-                Identity test = obj as Identity;
-
-                if (test == null) { return false; }
-
-                return this.value == test.value;
-            }
-
-            public static Boolean operator ==(Identity left, Identity right)
-            {
-                if (Object.ReferenceEquals(left, right)) { return true; }
-
-                if (((Object)left == null) || ((Object)right == null)) { return false; }
-
-                return left.Equals(right);
-            }
-
-            public static Boolean operator !=(Identity left, Identity right)
-            {
-                return !(left == right);
-            }
-
-            #endregion
-        }
-
-        //
-
-        public abstract class Entity : Persistent<Identity>
-        {
-            protected Entity() : base() { key = new Identity(); }
-
-            protected Entity(Identity key) : base(key) { }
-
-            protected byte[] version = new byte[8];
-
-            # region " Переопределение методов сравнения "
-
-            public override Int32 GetHashCode() { return key.GetHashCode(); }
-
-            public override Boolean Equals(Object obj)
-            {
-                if (obj == null) { return false; }
-
-                Entity test = obj as Entity;
-
-                if (test == null) { return false; }
-
-                return key == test.key;
-            }
-
-            public static Boolean operator ==(Entity left, Entity right)
-            {
-                if (Object.ReferenceEquals(left, right)) { return true; }
-
-                if (((Object)left == null) || ((Object)right == null)) { return false; }
-
-                return left.Equals(right);
-            }
-
-            public static Boolean operator !=(Entity left, Entity right)
-            {
-                return !(left == right);
-            }
-
-            #endregion
         }
     }
 }

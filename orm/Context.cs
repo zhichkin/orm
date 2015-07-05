@@ -49,25 +49,20 @@ namespace zhichkin
 
             # endregion
 
-            private Factory factory = null;
-
-            private string data_source = string.Empty;
-
-            private string assembly_name = string.Empty;
-
-            private Assembly domain_model_assembly = null;
+            private readonly Factory  factory;
+            private readonly string   data_source;
+            private readonly string   assembly_path;
+            private readonly Assembly domain_model_assembly;
 
             private Context() // thread safe
             {
                 data_source = ConfigurationManager.ConnectionStrings["DataSource"].ConnectionString;
 
-                assembly_name = ConfigurationManager.AppSettings["DomainModel"];
+                assembly_path = ConfigurationManager.AppSettings["DomainModel"];
 
-                domain_model_assembly = Assembly.Load(assembly_name);
+                domain_model_assembly = Assembly.Load(assembly_path);
 
-                factory = new Factory();
-
-                factory.Initialize(domain_model_assembly);
+                factory = new Factory(domain_model_assembly);
             }
 
             public string DataSource { get { return data_source; } }

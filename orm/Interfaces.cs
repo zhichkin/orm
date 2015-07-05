@@ -11,10 +11,16 @@ namespace zhichkin
         {
             New,      // объект только что создан в памяти, ещё не существует в источнике данных
             Virtual,  // объект существует в источнике данных, но ещё не загружены его свойства
-            Loading,  // объект в данный момент загружается из источника данных
             Original, // объект загружен из источника данных и ещё ни разу с тех пор не изменялся
             Changed,  // объект загружен из источника данных и с тех пор был уже изменен
-            Deleted   // объект удалён из источника данных, но пока ещё существует в памяти
+            Deleted,  // объект удалён из источника данных, но пока ещё существует в памяти
+            Loading   // объект в данный момент загружается из источника данных, это состояние
+                      // необходимо исключительно для случаев когда data mapper загружает из базы
+                      // данных объект, находящийсяв состоянии Virtual, чтобы иметь возможность
+                      // загружать значения свойств объекта обращаясь к ним напрямую и косвенно
+                      // вызывая метод Persistent.Set() - без этого состояния подобная стратегия
+                      // вызывает циклический вызов методов Persistent.Set(), Persistent.LazyLoad(),
+                      // IPersistent.Load(), IDataMapper.Select() и далее по кругу.
         }
 
         public class StateEventArgs : EventArgs
@@ -34,9 +40,9 @@ namespace zhichkin
             public PersistenceState NewState { get { return new_state; } }
         }
 
-        public delegate void StateChangingEventHandler<TKey>(IPersistent<TKey> sender, StateEventArgs args) where TKey : ISerializable, new();
+        public delegate void StateChangingEventHandler(object sender, StateEventArgs args);
 
-        public delegate void StateChangedEventHandler<TKey>(IPersistent<TKey> sender, StateEventArgs args) where TKey : ISerializable, new();
+        public delegate void StateChangedEventHandler(object sender, StateEventArgs args);
 
         public interface ISerializable
         {
@@ -44,20 +50,15 @@ namespace zhichkin
             void Deserialize(BinaryReader stream);
         }
 
-        public interface IActiveRecord
-        {
-            void Save();
-            void Kill();
-            void Load();
-        }
-
-        public interface IPersistent<TKey> :  ISerializable, IActiveRecord
-            where TKey : ISerializable, new()
+        public interface IPersistent<TKey> : ISerializable
         {
             TKey Key { get; }
             PersistenceState State { get; }
-            event StateChangedEventHandler<TKey> StateChanged;
-            event StateChangingEventHandler<TKey> StateChanging;
-        }
+            event StateChangedEventHandler StateChanged;
+            event StateChangingEventHandler StateChanging;
+            void Save();
+            void Kill();
+            void Load();
+        } 
     }
 }
