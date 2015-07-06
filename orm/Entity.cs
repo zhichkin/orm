@@ -16,6 +16,8 @@ namespace zhichkin
 
             protected Entity(Guid key) : base(key) { }
 
+            protected Entity(PersistenceState state) { throw new NotSupportedException(); }
+
             protected Entity(Guid key, PersistenceState state) : base(key, state) { }
 
             protected byte[] version = new byte[8];

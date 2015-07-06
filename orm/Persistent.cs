@@ -12,10 +12,9 @@ namespace zhichkin
     {
         public abstract class Persistent<TKey> : IPersistent<TKey>
         {
-            protected IContext context;
+            protected Context context;
 
             protected TKey key = default(TKey);
-            protected int discriminator = -1;
             protected PersistenceState state = PersistenceState.New;
 
             # region " Constructors "
@@ -28,6 +27,18 @@ namespace zhichkin
             protected Persistent(TKey key) : this()
             {
                 this.key = key;
+            }
+
+            protected Persistent(PersistenceState state) : this()
+            {
+                if (state == PersistenceState.Loading || state == PersistenceState.Deleted)
+                {
+                    this.state = state;
+                }
+                else
+                {
+                    throw new ArgumentOutOfRangeException("state"); // New, Original, Changed, Virtual
+                }
             }
 
             protected Persistent(TKey key, PersistenceState state) : this(key)
@@ -49,7 +60,7 @@ namespace zhichkin
                     state = value;
                 }
             }
-            public virtual int Discriminator { get { return discriminator; } }
+            public virtual int Discriminator { get { return 0; } }
 
             protected void Set<TValue>(TValue value, ref TValue storage)
             {
@@ -117,8 +128,8 @@ namespace zhichkin
 
             protected virtual void UpdateKeyValues()
             {
-                // compound keys can have fields changeable by user code
-                // when changed key is stored to the database object's key values in memory must be synchronized
+                // Compound keys can have fields changeable by user code.
+                // When changed key is stored to the database, object's key values in memory must be synchronized.
             }
 
             # endregion
@@ -199,14 +210,14 @@ namespace zhichkin
 
             public virtual void Serialize(BinaryWriter stream)
             {
-                stream.Write(discriminator);
+                stream.Write(this.Discriminator);
                 stream.Write((byte)state);                
             }
 
             public virtual void Deserialize(BinaryReader stream)
             {
                 int test = stream.ReadInt32();
-                if (test != discriminator) throw new ArgumentException("discriminator");
+                if (test != this.Discriminator) throw new ArgumentException("discriminator");
                 state = (PersistenceState)stream.ReadByte();
             }
 

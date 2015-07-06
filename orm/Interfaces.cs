@@ -59,6 +59,22 @@ namespace zhichkin
             void Save();
             void Kill();
             void Load();
-        } 
+        }
+
+        public interface IDataMapper
+        {
+            void Insert(ISerializable entity);
+            void Select(ISerializable entity);
+            void Update(ISerializable entity);
+            void Delete(ISerializable entity);
+        }
+
+        public interface IUserTypeFactory
+        {
+            object New(Type type);
+            object New(Type type, object key);
+            object New(Type type, PersistenceState state);
+            object New(Type type, object key, PersistenceState state);
+        }
     }
 }

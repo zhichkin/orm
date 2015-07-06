@@ -11,40 +11,30 @@ namespace zhichkin
 {
     namespace orm
     {
-        internal sealed class UserType
+        public sealed class UserType
         {
-            # region " Fields "
+            # region " Fields and Properties"
 
             private readonly Type type;
             private readonly Type tkey;
             private readonly int  dtor;
+            private IUserTypeFactory factory;
 
-            private Func<object> ctor_0;
-            private Func<object, object> ctor_1;
-            private Func<object, PersistenceState, object> ctor_2;
-            
+            public Type Type { get { return type; } }
+            public Type TKey { get { return tkey; } }
+            public int Discriminator { get { return dtor; } }
+            internal IUserTypeFactory Factory { get { return factory; } }
+
             # endregion
 
-            public UserType(Type type, Type tkey, int discriminator)
+            private UserType(Type type, Type tkey, int discriminator)
             {
                 this.type = type;
                 this.tkey = tkey;
                 this.dtor = discriminator;
             }
 
-            # region " Properties "
-
-            public Type Type { get { return type; } }
-            public Type TKey { get { return tkey; } }
-            public int Discriminator { get { return dtor; } }
-
-            internal Func<object> DefaultConstructor { get { return ctor_0; } }
-            internal Func<object, object> KeyConstructor { get { return ctor_1; } }
-            internal Func<object, PersistenceState, object> KeyStateConstructor { get { return ctor_2; } }
-
-            # endregion
-
-            internal sealed class Registry
+            public sealed class Registry
             {
                 # region " string constants "
                 internal const string ISerializable = "zhichkin.orm.ISerializable";
@@ -81,13 +71,18 @@ namespace zhichkin
                 private void Add(Type type, Type tkey, int discriminator)
                 {
                     UserType entry = new UserType(type, tkey, discriminator);
-
-                    entry.ctor_0 = this.CreateDefaultConstructor(entry);
-                    entry.ctor_1 = this.CreateKeyConstructor(entry);
-                    entry.ctor_2 = this.CreateKeyStateConstructor(entry);
-
+                    entry.factory = this.GetUserTypeFactory(entry);
                     map.Add(type, discriminator);
                     registry.Add(discriminator, entry);
+                }
+
+                private IUserTypeFactory GetUserTypeFactory(UserType ut)
+                {
+                    IUserTypeFactory factory = null;
+
+                    // TODO: look at the GetDataMapper method implementation of the Context class
+
+                    return factory;
                 }
 
                 # region " Getting UserType items "
@@ -116,57 +111,6 @@ namespace zhichkin
                         throw new UnknownTypeException("discriminator(" + discriminator.ToString() + ")");
                     }
                     return entry;
-                }
-
-                # endregion
-
-                # region " Building Constructors "
-
-                private Func<object> CreateDefaultConstructor(UserType ut)
-                {
-                    Func<object> ctor = null;
-
-                    ConstructorInfo constructor = ut.Type.GetConstructor(Type.EmptyTypes);
-
-                    if (constructor != null)
-                    {
-                        var call = Expression.New(constructor);
-
-                        var lambda = Expression.Lambda(call);
-
-                        ctor = (Func<object>)lambda.Compile();
-                    }
-
-                    return ctor;
-                }
-
-                private Func<object, object> CreateKeyConstructor(UserType ut)
-                {
-                    ConstructorInfo constructor = ut.Type.GetConstructor(new[] { ut.TKey });
-                    if (constructor == null)
-                    {
-                        throw new ArgumentNullException("Constructor is missing!");
-                    }
-                    var key = Expression.Parameter(ut.TKey, "key");
-                    var call = Expression.New(constructor, key);
-                    var lambda = Expression.Lambda(call, key);
-
-                    return (Func<object, object>)lambda.Compile();
-                }
-
-                private Func<object, PersistenceState, object> CreateKeyStateConstructor(UserType ut)
-                {
-                    ConstructorInfo constructor = ut.Type.GetConstructor(new[] { ut.TKey });
-                    if (constructor == null)
-                    {
-                        throw new ArgumentNullException("Constructor is missing!");
-                    }
-                    var key = Expression.Parameter(ut.TKey, "key");
-                    var state = Expression.Parameter(typeof(PersistenceState), "state");
-                    var call = Expression.New(constructor, key, state);
-                    var lambda = Expression.Lambda(call, key, state);
-
-                    return (Func<object, PersistenceState, object>)lambda.Compile();
                 }
 
                 # endregion

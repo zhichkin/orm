@@ -7,21 +7,7 @@ namespace zhichkin
 {
     namespace orm
     {
-        public interface IDataMapper
-        {
-            void Insert(ISerializable entity);
-            void Select(ISerializable entity);
-            void Update(ISerializable entity);
-            void Delete(ISerializable entity);
-        }
-
-        public interface IContext : IDataMapper
-        {
-            string DataSource { get; }
-            Factory Factory { get; }
-        }
-
-        public sealed class Context : IContext
+        public sealed class Context : IDataMapper, IUserTypeFactory
         {
             # region " static members "
 
@@ -29,7 +15,7 @@ namespace zhichkin
 
             private static Context singelton = null;
 
-            public static IContext Current
+            public static Context Current
             {
                 get
                 {
@@ -48,11 +34,11 @@ namespace zhichkin
             }
 
             # endregion
-
-            private readonly Factory  factory;
+            
             private readonly string   data_source;
             private readonly string   assembly_path;
             private readonly Assembly domain_model_assembly;
+            private readonly UserTypeFactory factory;
 
             private Context() // thread safe
             {
@@ -62,19 +48,22 @@ namespace zhichkin
 
                 domain_model_assembly = Assembly.Load(assembly_path);
 
-                factory = new Factory(domain_model_assembly);
+                factory = new UserTypeFactory(domain_model_assembly);
             }
 
             public string DataSource { get { return data_source; } }
 
-            public Factory Factory { get { return factory; } }
+            public object New(Type type) { return factory.New(type); }
+            public object New(Type type, object key) { return factory.New(type, key); }
+            public object New(Type type, PersistenceState state) { return factory.New(type, state); }
+            public object New(Type type, object key, PersistenceState state) { return factory.New(type, key, state); }
 
             private Dictionary<Type, IDataMapper> mappers = new Dictionary<Type, IDataMapper>();
 
-            void IDataMapper.Insert(ISerializable entity) { this.GetDataMapper(entity.GetType()).Insert(entity); }
-            void IDataMapper.Select(ISerializable entity) { this.GetDataMapper(entity.GetType()).Select(entity); }
-            void IDataMapper.Update(ISerializable entity) { this.GetDataMapper(entity.GetType()).Update(entity); }
-            void IDataMapper.Delete(ISerializable entity) { this.GetDataMapper(entity.GetType()).Delete(entity); }
+            public void Insert(ISerializable entity) { this.GetDataMapper(entity.GetType()).Insert(entity); }
+            public void Select(ISerializable entity) { this.GetDataMapper(entity.GetType()).Select(entity); }
+            public void Update(ISerializable entity) { this.GetDataMapper(entity.GetType()).Update(entity); }
+            public void Delete(ISerializable entity) { this.GetDataMapper(entity.GetType()).Delete(entity); }
 
             private IDataMapper GetDataMapper(Type type)
             {

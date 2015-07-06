@@ -11,16 +11,17 @@ namespace zhichkin
 {
     namespace orm
     {
-        public sealed class Factory
+        public sealed class UserTypeFactory : IUserTypeFactory
         {
             private readonly IdentityMap identity_map = new IdentityMap();
             
             private readonly UserType.Registry registry;
+            public UserType.Registry Registry { get { return registry; } }
 
             private readonly string domain_name;
             public string DomainName { get { return domain_name; } }
 
-            public Factory(Assembly domainModel)
+            public UserTypeFactory(Assembly domainModel)
             {
                 object[] attributes = domainModel.GetCustomAttributes(typeof(DomainModelAttribute), false);
 
@@ -47,7 +48,7 @@ namespace zhichkin
                 UserType info = registry.GetUserType(type);
                 if (info == null) throw new UnknownTypeException(type.FullName);
 
-                object item = info.DefaultConstructor();
+                object item = info.Factory.New(type);
 
                 Entity entity = item as Entity;
                 if (entity != null)
@@ -66,7 +67,7 @@ namespace zhichkin
                 UserType info = registry.GetUserType(type);
                 if (info == null) throw new UnknownTypeException(type.FullName);
 
-                object item = info.KeyConstructor(key);
+                object item = info.Factory.New(type, key);
 
                 Entity entity = item as Entity;
                 if (entity != null)
@@ -82,6 +83,17 @@ namespace zhichkin
                 return item;
             }
 
+            public object New(Type type, PersistenceState state)
+            {
+                if (type == null) throw new ArgumentNullException("type");
+                UserType info = registry.GetUserType(type);
+                if (info == null) throw new UnknownTypeException(type.FullName);
+
+                object item = info.Factory.New(type, state);
+
+                return item;
+            }
+
             public object New(Type type, object key, PersistenceState state)
             {
                 if (key == null) throw new ArgumentNullException("key");
@@ -89,7 +101,7 @@ namespace zhichkin
                 UserType info = registry.GetUserType(type);
                 if (info == null) throw new UnknownTypeException(type.FullName);
 
-                object item = info.KeyStateConstructor(key, state);
+                object item = info.Factory.New(type, key, state);
 
                 Entity entity = item as Entity;
                 if (entity != null)
