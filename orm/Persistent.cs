@@ -13,7 +13,6 @@ namespace zhichkin
         public abstract class Persistent<TKey> : IPersistent<TKey>
         {
             protected Context context;
-
             protected TKey key = default(TKey);
             protected PersistenceState state = PersistenceState.New;
 

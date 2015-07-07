@@ -71,10 +71,10 @@ namespace zhichkin
 
         public interface IUserTypeFactory
         {
-            object New(Type type);
-            object New(Type type, object key);
-            object New(Type type, PersistenceState state);
-            object New(Type type, object key, PersistenceState state);
+            object New();
+            object New(object key);
+            object New(PersistenceState state);
+            object New(object key, PersistenceState state);
         }
     }
 }

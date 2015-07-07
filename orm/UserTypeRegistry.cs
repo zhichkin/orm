@@ -23,7 +23,7 @@ namespace zhichkin
             public Type Type { get { return type; } }
             public Type TKey { get { return tkey; } }
             public int Discriminator { get { return dtor; } }
-            internal IUserTypeFactory Factory { get { return factory; } }
+            public IUserTypeFactory Factory { get { return factory; } }
 
             # endregion
 
@@ -37,14 +37,14 @@ namespace zhichkin
             public sealed class Registry
             {
                 # region " string constants "
-                internal const string ISerializable = "zhichkin.orm.ISerializable";
-                internal const string IPersistent_1 = "zhichkin.orm.IPersistent`1";
+                private const string IPersistent_1    = "zhichkin.orm.IPersistent`1";
+                private const string IUserTypeFactory = "zhichkin.orm.IUserTypeFactory";
                 # endregion
 
                 private Dictionary<Type, int> map = new Dictionary<Type, int>();
 
                 private Dictionary<int, UserType> registry = new Dictionary<int, UserType>();
-
+                
                 public Registry(Assembly domainModel)
                 {
                     object[] attributes;
@@ -64,25 +64,33 @@ namespace zhichkin
                         }
                         Type tkey = IPersistent_1.GenericTypeArguments[0];
 
-                        this.Add(type, tkey, attribute.Discriminator);
+                        UserType ut = this.Add(type, tkey, attribute.Discriminator);
+
+                        this.SetUserTypeFactory(domainModel, ut);
                     }
                 }
 
-                private void Add(Type type, Type tkey, int discriminator)
+                private UserType Add(Type type, Type tkey, int discriminator)
                 {
                     UserType entry = new UserType(type, tkey, discriminator);
-                    entry.factory = this.GetUserTypeFactory(entry);
                     map.Add(type, discriminator);
                     registry.Add(discriminator, entry);
+                    return entry;
                 }
 
-                private IUserTypeFactory GetUserTypeFactory(UserType ut)
+                private void SetUserTypeFactory(Assembly domainModel, UserType userType)
                 {
-                    IUserTypeFactory factory = null;
+                    string class_name = userType.Type.FullName + "+Factory";
 
-                    // TODO: look at the GetDataMapper method implementation of the Context class
+                    Type factoryType = domainModel.GetType(class_name);
+                    if (factoryType == null) throw new UnknownTypeException(class_name);
 
-                    return factory;
+                    Type IUserTypeFactory = factoryType.GetInterface(Registry.IUserTypeFactory);
+                    if (IUserTypeFactory == null) throw new ArgumentNullException("IUserTypeFactory is missing!");
+
+                    ConstructorInfo constructor = factoryType.GetConstructor(Type.EmptyTypes);
+
+                    userType.factory = (IUserTypeFactory)constructor.Invoke(null);
                 }
 
                 # region " Getting UserType items "

@@ -7,7 +7,7 @@ namespace zhichkin
 {
     namespace orm
     {
-        public sealed class Context : IDataMapper, IUserTypeFactory
+        public sealed class Context : IDataMapper
         {
             # region " static members "
 
@@ -53,10 +53,20 @@ namespace zhichkin
 
             public string DataSource { get { return data_source; } }
 
-            public object New(Type type) { return factory.New(type); }
-            public object New(Type type, object key) { return factory.New(type, key); }
-            public object New(Type type, PersistenceState state) { return factory.New(type, state); }
+            public Type GetUserType(int discriminator)
+            {
+                return factory.GetUserType(discriminator);
+            }
+
+            public object New(Type type)                                     { return factory.New(type);             }
+            public object New(Type type, object key)                         { return factory.New(type, key);        }
+            public object New(Type type,             PersistenceState state) { return factory.New(type,      state); }
             public object New(Type type, object key, PersistenceState state) { return factory.New(type, key, state); }
+
+            public object New(int type)                                     { return factory.New(type);             }
+            public object New(int type, object key)                         { return factory.New(type, key);        }
+            public object New(int type,             PersistenceState state) { return factory.New(type,      state); }
+            public object New(int type, object key, PersistenceState state) { return factory.New(type, key, state); }
 
             private Dictionary<Type, IDataMapper> mappers = new Dictionary<Type, IDataMapper>();
 

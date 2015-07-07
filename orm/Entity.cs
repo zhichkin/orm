@@ -12,14 +12,6 @@ namespace zhichkin
     {
         public abstract class Entity : Persistent<Guid>
         {
-            protected Entity() : base() { key = Guid.NewGuid(); }
-
-            protected Entity(Guid key) : base(key) { }
-
-            protected Entity(PersistenceState state) { throw new NotSupportedException(); }
-
-            protected Entity(Guid key, PersistenceState state) : base(key, state) { }
-
             protected byte[] version = new byte[8];
 
             public override void Serialize(BinaryWriter stream)
@@ -66,6 +58,40 @@ namespace zhichkin
             }
 
             #endregion
+
+            public abstract class Factory<TEntity> : IUserTypeFactory where TEntity : Entity, new()
+            {
+                public object New()
+                {
+                    TEntity entity = new TEntity();
+                    entity.context = Context.Current;
+                    entity.key     = Guid.NewGuid();
+                    return entity;
+                }
+
+                public object New(object key)
+                {
+                    TEntity entity = new TEntity();
+                    entity.context = Context.Current;
+                    entity.key     = (Guid)key;
+                    return entity;
+                }
+
+                public object New(PersistenceState state)
+                {
+                    throw new NotSupportedException();
+                }
+
+                public object New(object key, PersistenceState state)
+                {
+                    if (state == PersistenceState.Original || state == PersistenceState.Changed) throw new ArgumentOutOfRangeException("state");
+                    TEntity entity = new TEntity();
+                    entity.context = Context.Current;
+                    entity.key     = (Guid)key;
+                    entity.state   = (state == PersistenceState.New || state == PersistenceState.Loading || state == PersistenceState.Deleted) ? state : PersistenceState.Virtual;
+                    return entity;
+                }
+            }
         }
     }
 }

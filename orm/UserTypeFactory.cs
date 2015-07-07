@@ -11,12 +11,11 @@ namespace zhichkin
 {
     namespace orm
     {
-        public sealed class UserTypeFactory : IUserTypeFactory
+        public sealed class UserTypeFactory
         {
             private readonly IdentityMap identity_map = new IdentityMap();
             
             private readonly UserType.Registry registry;
-            public UserType.Registry Registry { get { return registry; } }
 
             private readonly string domain_name;
             public string DomainName { get { return domain_name; } }
@@ -39,7 +38,12 @@ namespace zhichkin
 
                 registry = new UserType.Registry(domainModel);
             }
-            
+
+            internal Type GetUserType(int discriminator)
+            {
+                return registry.GetUserType(discriminator).Type;
+            }
+
             # region " Factory methods "
 
             public object New(Type type)
@@ -48,7 +52,7 @@ namespace zhichkin
                 UserType info = registry.GetUserType(type);
                 if (info == null) throw new UnknownTypeException(type.FullName);
 
-                object item = info.Factory.New(type);
+                object item = info.Factory.New();
 
                 Entity entity = item as Entity;
                 if (entity != null)
@@ -67,7 +71,7 @@ namespace zhichkin
                 UserType info = registry.GetUserType(type);
                 if (info == null) throw new UnknownTypeException(type.FullName);
 
-                object item = info.Factory.New(type, key);
+                object item = info.Factory.New(key);
 
                 Entity entity = item as Entity;
                 if (entity != null)
@@ -89,7 +93,7 @@ namespace zhichkin
                 UserType info = registry.GetUserType(type);
                 if (info == null) throw new UnknownTypeException(type.FullName);
 
-                object item = info.Factory.New(type, state);
+                object item = info.Factory.New(state);
 
                 return item;
             }
@@ -101,12 +105,83 @@ namespace zhichkin
                 UserType info = registry.GetUserType(type);
                 if (info == null) throw new UnknownTypeException(type.FullName);
 
-                object item = info.Factory.New(type, key, state);
+                object item = info.Factory.New(key, state);
 
                 Entity entity = item as Entity;
                 if (entity != null)
                 {
                     bool exists = identity_map.Find(type, (Guid)key, ref entity);
+                    if (!exists)
+                    {
+                        identity_map.Add(entity);
+                    }
+                    return entity;
+                }
+
+                return item;
+            }
+
+            public object New(int type)
+            {
+                UserType info = registry.GetUserType(type);
+                if (info == null) throw new UnknownTypeException("discriminator(" + type.ToString() + ")");
+
+                object item = info.Factory.New();
+
+                Entity entity = item as Entity;
+                if (entity != null)
+                {
+                    identity_map.Add(entity);
+                    return entity;
+                }
+
+                return item;
+            }
+
+            public object New(int type, object key)
+            {
+                if (key == null) throw new ArgumentNullException("key");
+                UserType info = registry.GetUserType(type);
+                if (info == null) throw new UnknownTypeException("discriminator(" + type.ToString() + ")");
+
+                object item = info.Factory.New(key);
+
+                Entity entity = item as Entity;
+                if (entity != null)
+                {
+                    bool exists = identity_map.Find(info.Type, (Guid)key, ref entity);
+                    if (!exists)
+                    {
+                        identity_map.Add(entity);
+                    }
+                    return entity;
+                }
+
+                return item;
+            }
+
+            public object New(int type, PersistenceState state)
+            {
+                UserType info = registry.GetUserType(type);
+                if (info == null) throw new UnknownTypeException("discriminator(" + type.ToString() + ")");
+
+                object item = info.Factory.New(state);
+
+                return item;
+            }
+
+            public object New(int type, object key, PersistenceState state)
+            {
+                if (key == null) throw new ArgumentNullException("key");
+                UserType info = registry.GetUserType(type);
+                if (info == null) throw new UnknownTypeException("discriminator(" + type.ToString() + ")");
+
+                object item = info.Factory.New(key, state);
+
+                Entity entity = item as Entity;
+                if (entity != null)
+                {
+                    bool exists = identity_map.Find(info.Type, (Guid)key, ref entity);
                     if (!exists)
                     {
                         identity_map.Add(entity);
