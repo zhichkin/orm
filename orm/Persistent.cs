@@ -54,9 +54,15 @@ namespace zhichkin
                 get { return state; }
                 set
                 {
-                    if (value != PersistenceState.Original) throw new ArgumentOutOfRangeException("state");
-                    if (state != PersistenceState.Loading) throw new NotSupportedException("The state has to be Loading!");
-                    state = value;
+                    if ((state == PersistenceState.Loading  && value == PersistenceState.Original) ||
+                        (state == PersistenceState.Original && value == PersistenceState.Changed))
+                    {
+                        state = value;
+                    }
+                    else
+                    {
+                        throw new NotSupportedException("The transition from the current state to the new one is not supported!");
+                    }
                 }
             }
             public virtual int Discriminator { get { return 0; } }
@@ -221,6 +227,56 @@ namespace zhichkin
             }
 
             # endregion
+
+            public abstract class Factory<TPersistent> : IUserTypeFactory where TPersistent : Persistent<TKey>, new()
+            {
+                public Factory() { }
+
+                private void CheckState(PersistenceState state)
+                {
+                    if (state == PersistenceState.Changed ||
+                        state == PersistenceState.Virtual ||
+                        state == PersistenceState.Original) throw new ArgumentOutOfRangeException("state");
+                }
+
+                public object New()
+                {
+                    return new TPersistent()
+                    {
+                        context = Context.Current
+                    };
+                }
+
+                public object New(object key)
+                {
+                    return new TPersistent()
+                    {
+                        context = Context.Current,
+                        key = (TKey)key
+                    };
+                }
+
+                public object New(PersistenceState state)
+                {
+                    CheckState(state);
+                    return new TPersistent()
+                    {
+                        context = Context.Current,
+                        state = state
+                    };
+                }
+
+                public object New(object key, PersistenceState state)
+                {
+                    CheckState(state);
+                    return new TPersistent()
+                    {
+                        context = Context.Current,
+                        key = (TKey)key,
+                        state = state
+                    };
+                }
+            }
         }
     }
 }

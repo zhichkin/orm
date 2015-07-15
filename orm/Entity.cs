@@ -59,8 +59,10 @@ namespace zhichkin
 
             #endregion
 
-            public abstract class Factory<TEntity> : IUserTypeFactory where TEntity : Entity, new()
+            public abstract new class Factory<TEntity> : IUserTypeFactory where TEntity : Entity, new()
             {
+                public Factory() { }
+
                 public object New()
                 {
                     TEntity entity = new TEntity();
