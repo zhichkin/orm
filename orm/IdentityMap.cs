@@ -30,6 +30,11 @@ namespace zhichkin
                 return cash.TryGetValue(key, out item);
             }
 
+            public void Clear()
+            {
+                cash.Clear();
+            }
+
             private void NewEntity_StateChanged(object sender, StateEventArgs args)
             {
                 if (args.OldState == PersistenceState.New && args.NewState == PersistenceState.Original)

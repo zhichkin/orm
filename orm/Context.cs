@@ -58,6 +58,10 @@ namespace zhichkin
                 return factory.GetUserType(discriminator);
             }
 
+            public string DomainName { get { return factory.DomainName; } }
+
+            public void ClearEntitiesCash() { factory.ClearEntitiesCash(); }
+
             public object New(Type type)                                     { return factory.New(type);             }
             public object New(Type type, object key)                         { return factory.New(type, key);        }
             public object New(Type type,             PersistenceState state) { return factory.New(type,      state); }

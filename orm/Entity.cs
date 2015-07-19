@@ -63,6 +63,13 @@ namespace zhichkin
             {
                 public Factory() { }
 
+                private void CheckState(PersistenceState state)
+                {
+                    if (state == PersistenceState.Deleted ||
+                        state == PersistenceState.Changed ||
+                        state == PersistenceState.Original) throw new ArgumentOutOfRangeException("state");
+                }
+
                 public object New()
                 {
                     TEntity entity = new TEntity();
@@ -86,11 +93,11 @@ namespace zhichkin
 
                 public object New(object key, PersistenceState state)
                 {
-                    if (state == PersistenceState.Original || state == PersistenceState.Changed) throw new ArgumentOutOfRangeException("state");
+                    CheckState(state);
                     TEntity entity = new TEntity();
                     entity.context = Context.Current;
                     entity.key     = (Guid)key;
-                    entity.state   = (state == PersistenceState.New || state == PersistenceState.Loading || state == PersistenceState.Deleted) ? state : PersistenceState.Virtual;
+                    entity.state   = (state == PersistenceState.New || state == PersistenceState.Loading ) ? state : PersistenceState.Virtual;
                     return entity;
                 }
             }

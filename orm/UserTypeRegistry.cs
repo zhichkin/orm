@@ -51,7 +51,7 @@ namespace zhichkin
                     foreach (Type type in domainModel.GetTypes())
                     {
                         attributes = type.GetCustomAttributes(typeof(DiscriminatorAttribute), false);
-                        if (attributes == null)
+                        if (attributes == null || attributes.Length == 0)
                         {
                             continue;
                         }

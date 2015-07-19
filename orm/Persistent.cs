@@ -16,38 +16,6 @@ namespace zhichkin
             protected TKey key = default(TKey);
             protected PersistenceState state = PersistenceState.New;
 
-            # region " Constructors "
-
-            protected Persistent()
-            {
-                this.context = Context.Current;
-            }
-
-            protected Persistent(TKey key) : this()
-            {
-                this.key = key;
-            }
-
-            protected Persistent(PersistenceState state) : this()
-            {
-                if (state == PersistenceState.Loading || state == PersistenceState.Deleted)
-                {
-                    this.state = state;
-                }
-                else
-                {
-                    throw new ArgumentOutOfRangeException("state"); // New, Original, Changed, Virtual
-                }
-            }
-
-            protected Persistent(TKey key, PersistenceState state) : this(key)
-            {
-                if (state == PersistenceState.Original || state == PersistenceState.Changed) throw new ArgumentOutOfRangeException("state");
-                this.state = (state == PersistenceState.New || state == PersistenceState.Loading || state == PersistenceState.Deleted) ? state : PersistenceState.Virtual;
-            }
-
-            # endregion
-
             public TKey Key { get { return key; } }
             public PersistenceState State
             {
@@ -234,7 +202,8 @@ namespace zhichkin
 
                 private void CheckState(PersistenceState state)
                 {
-                    if (state == PersistenceState.Changed ||
+                    if (state == PersistenceState.Deleted ||
+                        state == PersistenceState.Changed ||
                         state == PersistenceState.Virtual ||
                         state == PersistenceState.Original) throw new ArgumentOutOfRangeException("state");
                 }
@@ -252,7 +221,7 @@ namespace zhichkin
                     return new TPersistent()
                     {
                         context = Context.Current,
-                        key = (TKey)key
+                        key     = (TKey)key
                     };
                 }
 
@@ -262,7 +231,7 @@ namespace zhichkin
                     return new TPersistent()
                     {
                         context = Context.Current,
-                        state = state
+                        state   = state
                     };
                 }
 
@@ -272,8 +241,8 @@ namespace zhichkin
                     return new TPersistent()
                     {
                         context = Context.Current,
-                        key = (TKey)key,
-                        state = state
+                        key     = (TKey)key,
+                        state   = state
                     };
                 }
             }

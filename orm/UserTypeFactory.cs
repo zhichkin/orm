@@ -44,6 +44,11 @@ namespace zhichkin
                 return registry.GetUserType(discriminator).Type;
             }
 
+            internal void ClearEntitiesCash()
+            {
+                identity_map.Clear();
+            }
+
             # region " Factory methods "
 
             public object New(Type type)
@@ -76,12 +81,13 @@ namespace zhichkin
                 Entity entity = item as Entity;
                 if (entity != null)
                 {
-                    bool exists = identity_map.Find(type, (Guid)key, ref entity);
+                    Entity cashed = null;
+                    bool exists = identity_map.Find(type, (Guid)key, ref cashed);
                     if (!exists)
                     {
                         identity_map.Add(entity);
                     }
-                    return entity;
+                    return (exists) ? cashed : entity;
                 }
 
                 return item;
@@ -110,12 +116,13 @@ namespace zhichkin
                 Entity entity = item as Entity;
                 if (entity != null)
                 {
-                    bool exists = identity_map.Find(type, (Guid)key, ref entity);
+                    Entity cashed = null;
+                    bool exists = identity_map.Find(type, (Guid)key, ref cashed);
                     if (!exists)
                     {
                         identity_map.Add(entity);
                     }
-                    return entity;
+                    return (exists) ? cashed : entity;
                 }
 
                 return item;
@@ -149,12 +156,13 @@ namespace zhichkin
                 Entity entity = item as Entity;
                 if (entity != null)
                 {
-                    bool exists = identity_map.Find(info.Type, (Guid)key, ref entity);
+                    Entity cashed = null;
+                    bool exists = identity_map.Find(info.Type, (Guid)key, ref cashed);
                     if (!exists)
                     {
                         identity_map.Add(entity);
                     }
-                    return entity;
+                    return (exists) ? cashed : entity;
                 }
 
                 return item;
@@ -181,12 +189,13 @@ namespace zhichkin
                 Entity entity = item as Entity;
                 if (entity != null)
                 {
-                    bool exists = identity_map.Find(info.Type, (Guid)key, ref entity);
+                    Entity cashed = null;
+                    bool exists = identity_map.Find(info.Type, (Guid)key, ref cashed);
                     if (!exists)
                     {
                         identity_map.Add(entity);
                     }
-                    return entity;
+                    return (exists) ? cashed : entity;
                 }
 
                 return item;
