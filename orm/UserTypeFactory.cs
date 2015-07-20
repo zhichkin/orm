@@ -202,6 +202,30 @@ namespace zhichkin
             }
 
             # endregion
+
+            # region " Generic factory methods "
+
+            public T New<T>()
+            {
+                return (T)New(typeof(T));
+            }
+
+            public T New<T>(object key)
+            {
+                return (T)New(typeof(T), key);
+            }
+
+            public T New<T>(PersistenceState state)
+            {
+                return (T)New(typeof(T), state);
+            }
+
+            public T New<T>(object key, PersistenceState state)
+            {
+                return (T)New(typeof(T), key, state);
+            }
+
+            # endregion
         }
     }
 }

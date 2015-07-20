@@ -1,6 +1,9 @@
 ﻿using System;
+using System.Dynamic;
 using System.Reflection;
 using System.Configuration;
+using System.Data;
+using System.Data.SqlClient;
 using System.Collections.Generic;
 
 namespace zhichkin
@@ -72,6 +75,11 @@ namespace zhichkin
             public object New(int type,             PersistenceState state) { return factory.New(type,      state); }
             public object New(int type, object key, PersistenceState state) { return factory.New(type, key, state); }
 
+            public T New<T>()                                   { return factory.New<T>();           }
+            public T New<T>(object key)                         { return factory.New<T>(key);        }
+            public T New<T>(            PersistenceState state) { return factory.New<T>(     state); }
+            public T New<T>(object key, PersistenceState state) { return factory.New<T>(key, state); }
+
             private Dictionary<Type, IDataMapper> mappers = new Dictionary<Type, IDataMapper>();
 
             public void Insert(ISerializable entity) { this.GetDataMapper(entity.GetType()).Insert(entity); }
@@ -99,6 +107,64 @@ namespace zhichkin
                 }
 
                 return mapper;
+            }
+            
+            public int ExecuteNonQuery(string sql)
+            {
+                int result = 0;
+                using (SqlConnection connection = new SqlConnection(data_source))
+                {
+                    using (SqlCommand command = new SqlCommand(sql, connection))
+                    {
+                        connection.Open();
+
+                        result = command.ExecuteNonQuery();
+                    }
+                }
+                return result;
+            }
+
+            public object ExecuteScalar(string sql)
+            {
+                object result = null;
+                using (SqlConnection connection = new SqlConnection(data_source))
+                {
+                    using (SqlCommand command = new SqlCommand(sql, connection))
+                    {
+                        connection.Open();
+
+                        result = command.ExecuteScalar();
+                    }
+                }
+                return result;
+            }
+
+            public List<dynamic> Execute(string sql)
+            {
+                List<dynamic> result = new List<dynamic>();
+                using (SqlConnection connection = new SqlConnection(data_source))
+                {
+                    using (SqlCommand command = new SqlCommand(sql, connection))
+                    {
+                        connection.Open();
+
+                        using (SqlDataReader reader = command.ExecuteReader())
+                        {
+                            while (reader.Read())
+                            {
+                                dynamic item = new ExpandoObject();
+                                for (int i = 0; i < reader.FieldCount; i++)
+                                {
+                                    string name = reader.GetName(i);
+                                    object value = reader.GetValue(i);
+                                    ((IDictionary<string, object>)item).Add(name, value);                                    
+                                }
+                                result.Add(item);
+                            }
+                        }
+                    }
+                }
+                return result;
             }
         }
     }
