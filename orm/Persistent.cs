@@ -22,10 +22,10 @@ namespace zhichkin
                 get { return state; }
                 set
                 {
-                    if ((state == PersistenceState.Loading  && value == PersistenceState.Original) ||
-                        (state == PersistenceState.Original && value == PersistenceState.Changed))
+                    if (state == PersistenceState.Loading  && value == PersistenceState.Original)
                     {
                         state = value;
+                        UpdateKeyValues();
                     }
                     else
                     {
@@ -92,7 +92,7 @@ namespace zhichkin
 
             protected void OnStateChanged(StateEventArgs args)
             {
-                if (args.OldState == PersistenceState.Changed && args.NewState == PersistenceState.Original)
+                if (args.NewState == PersistenceState.Original)
                 {
                     UpdateKeyValues();
                 }
@@ -218,11 +218,7 @@ namespace zhichkin
 
                 public object New(object key)
                 {
-                    return new TPersistent()
-                    {
-                        context = Context.Current,
-                        key     = (TKey)key
-                    };
+                    throw new NotSupportedException();
                 }
 
                 public object New(PersistenceState state)
@@ -237,13 +233,7 @@ namespace zhichkin
 
                 public object New(object key, PersistenceState state)
                 {
-                    CheckState(state);
-                    return new TPersistent()
-                    {
-                        context = Context.Current,
-                        key     = (TKey)key,
-                        state   = state
-                    };
+                    throw new NotSupportedException();
                 }
             }
         }
