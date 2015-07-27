@@ -67,6 +67,7 @@ namespace zhichkin
                 {
                     if (state == PersistenceState.Deleted ||
                         state == PersistenceState.Changed ||
+                        state == PersistenceState.Loading ||
                         state == PersistenceState.Original) throw new ArgumentOutOfRangeException("state");
                 }
 
@@ -97,7 +98,7 @@ namespace zhichkin
                     TEntity entity = new TEntity();
                     entity.context = Context.Current;
                     entity.key     = (Guid)key;
-                    entity.state   = (state == PersistenceState.New || state == PersistenceState.Loading ) ? state : PersistenceState.Virtual;
+                    entity.state   = (state == PersistenceState.New) ? state : PersistenceState.Virtual;
                     return entity;
                 }
             }

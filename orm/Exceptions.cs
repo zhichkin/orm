@@ -11,6 +11,6 @@ namespace zhichkin
 
         public class ReferenceIntegrityException : Exception { public ReferenceIntegrityException(string message) : base(message) { } }
 
-        public class OptimisticConcurencyException : Exception { public OptimisticConcurencyException(string message) : base(message) { } }
+        public class OptimisticConcurrencyException : Exception { public OptimisticConcurrencyException(string message) : base(message) { } }
     }
 }
