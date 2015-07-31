@@ -23,5 +23,11 @@ namespace zhichkin
 
             public int Discriminator { get { return discriminator; } }
         }
+
+        [AttributeUsage(AttributeTargets.Property, AllowMultiple = false, Inherited = false)]
+        public sealed class AggregateAttribute : Attribute
+        {
+            public AggregateAttribute() { }
+        }
     }
 }
