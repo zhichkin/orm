@@ -6,3 +6,4 @@ D:\Колесо на коленке\orm\orm\obj\Release\zhichkin.orm.pdb
 \\dots.detoc.local\main-root$\Desktops-MyDocs\d_zhichkin\Desktop\zhichkin\orm\orm\bin\Release\zhichkin.orm.pdb
 \\dots.detoc.local\main-root$\Desktops-MyDocs\d_zhichkin\Desktop\zhichkin\orm\orm\obj\Release\zhichkin.orm.dll
 \\dots.detoc.local\main-root$\Desktops-MyDocs\d_zhichkin\Desktop\zhichkin\orm\orm\obj\Release\zhichkin.orm.pdb
+D:\Колесо на коленке\orm\orm\obj\Release\orm.csprojResolveAssemblyReference.cache

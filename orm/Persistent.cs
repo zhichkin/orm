@@ -10,7 +10,7 @@ namespace zhichkin
 {
     namespace orm
     {
-        public abstract class Persistent<TKey> : IPersistent<TKey>
+        public abstract partial class Persistent<TKey> : IPersistent<TKey>
         {
             protected Context context;
             protected TKey key = default(TKey);
@@ -195,47 +195,6 @@ namespace zhichkin
             }
 
             # endregion
-
-            public abstract class Factory<TPersistent> : IUserTypeFactory where TPersistent : Persistent<TKey>, new()
-            {
-                public Factory() { }
-
-                private void CheckState(PersistenceState state)
-                {
-                    if (state == PersistenceState.Deleted ||
-                        state == PersistenceState.Changed ||
-                        state == PersistenceState.Virtual ||
-                        state == PersistenceState.Original) throw new ArgumentOutOfRangeException("state");
-                }
-
-                public object New()
-                {
-                    return new TPersistent()
-                    {
-                        context = Context.Current
-                    };
-                }
-
-                public object New(object key)
-                {
-                    throw new NotSupportedException();
-                }
-
-                public object New(PersistenceState state)
-                {
-                    CheckState(state);
-                    return new TPersistent()
-                    {
-                        context = Context.Current,
-                        state   = state
-                    };
-                }
-
-                public object New(object key, PersistenceState state)
-                {
-                    throw new NotSupportedException();
-                }
-            }
         }
     }
 }

@@ -3,6 +3,7 @@ using System.IO;
 using System.Text;
 using System.Reflection;
 using System.Collections;
+using System.Transactions;
 using System.ComponentModel;
 using System.Collections.Generic;
 
@@ -10,7 +11,7 @@ namespace zhichkin
 {
     namespace orm
     {
-        public abstract class Entity : Persistent<Guid>
+        public abstract partial class Entity : Persistent<Guid>
         {
             protected byte[] version = new byte[8];
 
@@ -57,49 +58,23 @@ namespace zhichkin
                 return !(left == right);
             }
 
-            #endregion
+            #endregion            
 
-            public abstract new class Factory<TEntity> : IUserTypeFactory where TEntity : Entity, new()
+            public override void Save()
             {
-                public Factory() { }
-
-                private void CheckState(PersistenceState state)
+                using (TransactionScope scope = new TransactionScope())
                 {
-                    if (state == PersistenceState.Deleted ||
-                        state == PersistenceState.Changed ||
-                        state == PersistenceState.Loading ||
-                        state == PersistenceState.Original) throw new ArgumentOutOfRangeException("state");
+                    base.Save();
+                    scope.Complete();
                 }
+            }
 
-                public object New()
+            public override void Kill()
+            {
+                using (TransactionScope scope = new TransactionScope())
                 {
-                    TEntity entity = new TEntity();
-                    entity.context = Context.Current;
-                    entity.key     = Guid.NewGuid();
-                    return entity;
-                }
-
-                public object New(object key)
-                {
-                    TEntity entity = new TEntity();
-                    entity.context = Context.Current;
-                    entity.key     = (Guid)key;
-                    return entity;
-                }
-
-                public object New(PersistenceState state)
-                {
-                    throw new NotSupportedException();
-                }
-
-                public object New(object key, PersistenceState state)
-                {
-                    CheckState(state);
-                    TEntity entity = new TEntity();
-                    entity.context = Context.Current;
-                    entity.key     = (Guid)key;
-                    entity.state   = (state == PersistenceState.New) ? state : PersistenceState.Virtual;
-                    return entity;
+                    base.Kill();
+                    scope.Complete();
                 }
             }
         }
