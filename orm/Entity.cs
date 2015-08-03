@@ -60,11 +60,34 @@ namespace zhichkin
 
             #endregion            
 
+            public event EntitySavingEventHandler  Saving;
+            public event EntitySavedEventHandler   Saved;
+            public event EntityKillingEventHandler Killing;
+            public event EntityKilledEventHandler  Killed;
+            private void OnSaving()
+            {
+                if (Saving != null) Saving(this);
+            }
+            private void OnSaved()
+            {
+                if (Saved != null) Saved(this);
+            }
+            private void OnKilling()
+            {
+                if (Killing != null) Killing(this);
+            }
+            private void OnKilled()
+            {
+                if (Killed != null) Killed(this);
+            }
+
             public override void Save()
             {
+                OnSaving();
                 using (TransactionScope scope = new TransactionScope())
                 {
                     base.Save();
+                    OnSaved();
                     scope.Complete();
                 }
             }
@@ -73,9 +96,11 @@ namespace zhichkin
             {
                 using (TransactionScope scope = new TransactionScope())
                 {
+                    OnKilling();
                     base.Kill();
                     scope.Complete();
                 }
+                OnKilled();
             }
         }
     }

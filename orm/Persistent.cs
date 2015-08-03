@@ -35,6 +35,12 @@ namespace zhichkin
             }
             public virtual int Discriminator { get { return 0; } }
 
+            protected virtual void UpdateKeyValues()
+            {
+                // Compound keys can have fields changeable by user code.
+                // When changed key is stored to the database, object's key values in memory must be synchronized.
+            }
+
             protected void Set<TValue>(TValue value, ref TValue storage)
             {
                 if (state == PersistenceState.Deleted) return;
@@ -84,12 +90,10 @@ namespace zhichkin
 
             public event StateChangedEventHandler StateChanged;
             public event StateChangingEventHandler StateChanging;
-
             protected void OnStateChanging(StateEventArgs args)
             {
                 if (StateChanging != null) StateChanging(this, args);
             }
-
             protected void OnStateChanged(StateEventArgs args)
             {
                 if (args.NewState == PersistenceState.Original)
@@ -98,13 +102,7 @@ namespace zhichkin
                 }
                 if (StateChanged != null) StateChanged(this, args);
             }
-
-            protected virtual void UpdateKeyValues()
-            {
-                // Compound keys can have fields changeable by user code.
-                // When changed key is stored to the database, object's key values in memory must be synchronized.
-            }
-
+            
             # endregion
             
             private void LazyLoad() { if (state == PersistenceState.Virtual) Load(); }

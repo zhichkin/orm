@@ -15,7 +15,7 @@ namespace zhichkin
         {
             public sealed class Aggregate<TOwner, TItem> : IEnumerable<TItem>
                 where TOwner : Entity, new()
-                where TItem  : Persistent<TKey>, new()
+                where TItem  : IActiveRecord, new()
             {
                 private readonly TOwner owner;
                 private readonly string fk_name;
@@ -28,24 +28,8 @@ namespace zhichkin
                     this.fk_name = fk_name;
                     this.load_items = items_loader;
                     GenerateSetItemOwnerMethod();
-                    owner.StateChanged += Owner_StateChanged;
-                    owner.StateChanging += Owner_StateChanging;
-                }
-
-                private void Owner_StateChanged(object sender, StateEventArgs args)
-                {
-                    if (args.NewState == PersistenceState.Original)
-                    {
-                        Save();
-                    }
-                }
-
-                private void Owner_StateChanging(object sender, StateEventArgs args)
-                {
-                    if (args.NewState == PersistenceState.Deleted)
-                    {
-                        Kill();
-                    }
+                    owner.Saved += Save;
+                    owner.Killing += Kill;
                 }
 
                 private PersistenceState state = PersistenceState.Virtual;
@@ -84,7 +68,7 @@ namespace zhichkin
                      items = load_items(owner);
                 }
 
-                private void Save()
+                private void Save(Entity sender)
                 {
                     if (state == PersistenceState.Virtual) return;
                     foreach (TItem item in items)
@@ -97,19 +81,13 @@ namespace zhichkin
                     }
                 }
 
-                private void Kill()
+                private void Kill(Entity sender)
                 {
-                    LazyLoad();
-                    foreach (TItem item in items)
-                    {
-                        item.Kill();
-                    }                    
+                    Clear();                   
                     foreach (TItem item in delete)
                     {
                         item.Kill();
                     }
-                    delete.AddRange(items);
-                    items.Clear();
                 }
 
                 public TItem Add()
@@ -126,6 +104,13 @@ namespace zhichkin
                     LazyLoad();
                     items.Remove(item);
                     delete.Add(item);
+                }
+
+                public void Clear()
+                {
+                    LazyLoad();
+                    delete.AddRange(items);
+                    items.Clear();
                 }
 
                 public List<TItem> Deleted
