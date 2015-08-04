@@ -26,9 +26,8 @@ namespace zhichkin
         public delegate void StateChangingEventHandler(object sender, StateEventArgs args);
         public delegate void StateChangedEventHandler(object sender, StateEventArgs args);
 
-        public delegate void EntitySavingEventHandler(Entity sender);
-        public delegate void EntitySavedEventHandler(Entity sender);
-        public delegate void EntityKillingEventHandler(Entity sender);
-        public delegate void EntityKilledEventHandler(Entity sender);
+        public delegate void EntitySaveEventHandler(Entity entity);
+        public delegate void EntityKillEventHandler(Entity entity);
+        public delegate void EntityLoadEventHandler(Entity entity);
     }
 }

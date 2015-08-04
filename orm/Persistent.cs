@@ -148,7 +148,7 @@ namespace zhichkin
                 }
             }
 
-            public void Load()
+            public virtual void Load()
             {
                 if (state == PersistenceState.Changed || state == PersistenceState.Original || state == PersistenceState.Virtual)
                 {

@@ -15,7 +15,7 @@ namespace zhichkin
         {
             public sealed class Aggregate<TOwner, TItem> : IEnumerable<TItem>
                 where TOwner : Entity, new()
-                where TItem  : IActiveRecord, new()
+                where TItem : IPersistent, new()
             {
                 private readonly TOwner owner;
                 private readonly string fk_name;
@@ -28,8 +28,8 @@ namespace zhichkin
                     this.fk_name = fk_name;
                     this.load_items = items_loader;
                     GenerateSetItemOwnerMethod();
-                    owner.Saved += Save;
-                    owner.Killing += Kill;
+                    owner.OnSave += Save;
+                    owner.OnKill += Kill;
                 }
 
                 private PersistenceState state = PersistenceState.Virtual;

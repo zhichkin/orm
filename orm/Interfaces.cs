@@ -13,14 +13,14 @@ namespace zhichkin
             void Deserialize(BinaryReader stream);
         }
 
-        public interface IActiveRecord : ISerializable
+        public interface IPersistent : ISerializable
         {
             void Save();
             void Kill();
             void Load();
         }
 
-        public interface IPersistent<TKey> : IActiveRecord
+        public interface IPersistent<TKey> : IPersistent
         {
             TKey Key { get; }
             PersistenceState State { get; }
