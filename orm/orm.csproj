@@ -40,7 +40,7 @@
     <Compile Include="Entity.Factory.cs" />
     <Compile Include="Events.cs" />
     <Compile Include="Persistent.State.cs" />
-    <Compile Include="Persistent.Aggregate.cs" />
+    <Compile Include="Persistent.Relation.cs" />
     <Compile Include="Context.cs" />
     <Compile Include="Entity.cs" />
     <Compile Include="Persistent.Factory.cs" />

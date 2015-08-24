@@ -13,7 +13,7 @@ namespace zhichkin
     {
         public partial class Persistent<TKey>
         {
-            public sealed class Aggregate<TOwner, TItem> : IEnumerable<TItem>
+            public sealed class Relation<TOwner, TItem> : IEnumerable<TItem>
                 where TOwner : Entity, new()
                 where TItem : IPersistent, new()
             {
@@ -22,12 +22,15 @@ namespace zhichkin
                 private readonly Func<TOwner, List<TItem>> load_items;
                 private static Action<TItem, TOwner> set_item_owner;
 
-                public Aggregate(TOwner owner, string fk_name, Func<TOwner, List<TItem>> items_loader)
+                public Relation(TOwner owner, string fk_name, Func<TOwner, List<TItem>> items_loader)
                 {
                     this.owner = owner;
                     this.fk_name = fk_name;
                     this.load_items = items_loader;
-                    GenerateSetItemOwnerMethod();
+                    if (!string.IsNullOrEmpty(fk_name))
+                    {
+                        GenerateSetItemOwnerMethod();
+                    }
                     owner.OnSave += Save;
                     owner.OnKill += Kill;
                 }
@@ -94,7 +97,10 @@ namespace zhichkin
                 {
                     LazyLoad();
                     TItem item = Context.Current.New<TItem>();
-                    set_item_owner(item, owner);
+                    if (!string.IsNullOrEmpty(fk_name))
+                    {
+                        set_item_owner(item, owner);
+                    }
                     items.Add(item);
                     return item;
                 }

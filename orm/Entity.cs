@@ -25,7 +25,16 @@ namespace zhichkin
             }
             private void FireKillEvent()
             {
-                if (OnKill != null) OnKill(this);
+                if (OnKill == null) return;
+
+                Delegate[] list = OnKill.GetInvocationList();
+                int count = list.Length;
+                while (count > 0)
+                {
+                    count--;
+                    ((EntityKillEventHandler)list[count])(this);
+                }
+
             }
             private void FireLoadEvent()
             {
