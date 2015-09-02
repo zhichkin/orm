@@ -15,38 +15,11 @@ namespace zhichkin
         {
             protected byte[] version = new byte[8];
 
-            public event EntitySaveEventHandler OnSave;
-            public event EntityKillEventHandler OnKill;
-            public event EntityLoadEventHandler OnLoad;
-
-            private void FireSaveEvent()
-            {
-                if (OnSave != null) OnSave(this);
-            }
-            private void FireKillEvent()
-            {
-                if (OnKill == null) return;
-
-                Delegate[] list = OnKill.GetInvocationList();
-                int count = list.Length;
-                while (count > 0)
-                {
-                    count--;
-                    ((EntityKillEventHandler)list[count])(this);
-                }
-
-            }
-            private void FireLoadEvent()
-            {
-                if (OnLoad != null) OnLoad(this);
-            }
-
             public override void Save()
             {
                 using (TransactionScope scope = new TransactionScope())
                 {
                     base.Save();
-                    FireSaveEvent();
                     scope.Complete();
                 }
             }
@@ -54,17 +27,11 @@ namespace zhichkin
             {
                 using (TransactionScope scope = new TransactionScope())
                 {
-                    FireKillEvent();
                     base.Kill();
                     scope.Complete();
                 }
             }
-            public override void Load()
-            {
-                base.Load();
-                FireLoadEvent();
-            }
-
+            
             public override void Serialize(BinaryWriter stream)
             {
                 base.Serialize(stream);

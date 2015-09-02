@@ -109,6 +109,32 @@ namespace zhichkin
 
             # region " ActiveRecord "
 
+            public event SaveEventHandler OnSave;
+            public event KillEventHandler OnKill;
+            public event LoadEventHandler OnLoad;
+
+            private void FireSaveEvent()
+            {
+                if (OnSave != null) OnSave(this);
+            }
+            private void FireKillEvent()
+            {
+                if (OnKill == null) return;
+
+                Delegate[] list = OnKill.GetInvocationList();
+                int count = list.Length;
+                while (count > 0)
+                {
+                    count--;
+                    ((KillEventHandler)list[count])(this);
+                }
+
+            }
+            private void FireLoadEvent()
+            {
+                if (OnLoad != null) OnLoad(this);
+            }
+
             public virtual void Save()
             {
                 if (state == PersistenceState.New || state == PersistenceState.Changed)
@@ -130,12 +156,14 @@ namespace zhichkin
 
                     OnStateChanged(args);
                 }
+                FireSaveEvent();
             }
-
             public virtual void Kill()
             {
                 if (state == PersistenceState.Original || state == PersistenceState.Changed || state == PersistenceState.Virtual)
                 {
+                    FireKillEvent();
+
                     StateEventArgs args = new StateEventArgs(state, PersistenceState.Deleted);
 
                     OnStateChanging(args);
@@ -147,7 +175,6 @@ namespace zhichkin
                     OnStateChanged(args);
                 }
             }
-
             public virtual void Load()
             {
                 if (state == PersistenceState.Changed || state == PersistenceState.Original || state == PersistenceState.Virtual)
@@ -167,6 +194,8 @@ namespace zhichkin
                         state = PersistenceState.Original;
 
                         OnStateChanged(args);
+
+                        FireLoadEvent();
                     }
                     catch
                     {

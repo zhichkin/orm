@@ -23,11 +23,11 @@ namespace zhichkin
             public PersistenceState OldState { get { return old_state; } }
             public PersistenceState NewState { get { return new_state; } }
         }
-        public delegate void StateChangingEventHandler(object sender, StateEventArgs args);
-        public delegate void StateChangedEventHandler(object sender, StateEventArgs args);
+        public delegate void StateChangingEventHandler(IPersistent sender, StateEventArgs args);
+        public delegate void StateChangedEventHandler(IPersistent sender, StateEventArgs args);
 
-        public delegate void EntitySaveEventHandler(Entity entity);
-        public delegate void EntityKillEventHandler(Entity entity);
-        public delegate void EntityLoadEventHandler(Entity entity);
+        public delegate void SaveEventHandler(IPersistent entity);
+        public delegate void KillEventHandler(IPersistent entity);
+        public delegate void LoadEventHandler(IPersistent entity);
     }
 }

@@ -14,7 +14,7 @@ namespace zhichkin
         public partial class Persistent<TKey>
         {
             public sealed class Relation<TOwner, TItem> : IEnumerable<TItem>
-                where TOwner : Entity, new()
+                where TOwner : IPersistent, new()
                 where TItem : IPersistent, new()
             {
                 private readonly TOwner owner;
@@ -71,7 +71,7 @@ namespace zhichkin
                      items = load_items(owner);
                 }
 
-                private void Save(Entity sender)
+                private void Save(IPersistent sender)
                 {
                     if (state == PersistenceState.Virtual) return;
                     foreach (TItem item in items)
@@ -84,7 +84,7 @@ namespace zhichkin
                     }
                 }
 
-                private void Kill(Entity sender)
+                private void Kill(IPersistent sender)
                 {
                     Clear();                   
                     foreach (TItem item in delete)

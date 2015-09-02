@@ -18,6 +18,9 @@ namespace zhichkin
             void Save();
             void Kill();
             void Load();
+            event SaveEventHandler OnSave;
+            event KillEventHandler OnKill;
+            event LoadEventHandler OnLoad;
         }
 
         public interface IPersistent<TKey> : IPersistent
