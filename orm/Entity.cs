@@ -3,7 +3,6 @@ using System.IO;
 using System.Text;
 using System.Reflection;
 using System.Collections;
-using System.Transactions;
 using System.ComponentModel;
 using System.Collections.Generic;
 
@@ -15,23 +14,6 @@ namespace zhichkin
         {
             protected byte[] version = new byte[8];
 
-            public override void Save()
-            {
-                using (TransactionScope scope = new TransactionScope())
-                {
-                    base.Save();
-                    scope.Complete();
-                }
-            }
-            public override void Kill()
-            {
-                using (TransactionScope scope = new TransactionScope())
-                {
-                    base.Kill();
-                    scope.Complete();
-                }
-            }
-            
             public override void Serialize(BinaryWriter stream)
             {
                 base.Serialize(stream);

@@ -11,132 +11,138 @@ namespace zhichkin
 {
     namespace orm
     {
-        public partial class Persistent<TKey>
+        public sealed class Relation<TOwner, TItem> : IEnumerable<TItem>
+            where TOwner : IPersistent, new()
+            where TItem : IPersistent, new()
         {
-            public sealed class Relation<TOwner, TItem> : IEnumerable<TItem>
-                where TOwner : IPersistent, new()
-                where TItem : IPersistent, new()
+            private readonly TOwner owner;
+            private readonly string fk_name;
+            private readonly Func<TOwner, List<TItem>> load_items;
+            private static Action<TItem, TOwner> set_item_owner;
+
+            public Relation(TOwner owner, string fk_name, Func<TOwner, List<TItem>> items_loader)
             {
-                private readonly TOwner owner;
-                private readonly string fk_name;
-                private readonly Func<TOwner, List<TItem>> load_items;
-                private static Action<TItem, TOwner> set_item_owner;
-
-                public Relation(TOwner owner, string fk_name, Func<TOwner, List<TItem>> items_loader)
+                this.owner = owner;
+                this.fk_name = fk_name;
+                this.load_items = items_loader;
+                if (!string.IsNullOrEmpty(fk_name))
                 {
-                    this.owner = owner;
-                    this.fk_name = fk_name;
-                    this.load_items = items_loader;
-                    if (!string.IsNullOrEmpty(fk_name))
-                    {
-                        GenerateSetItemOwnerMethod();
-                    }
-                    owner.OnSave += Save;
-                    owner.OnKill += Kill;
+                    GenerateSetItemOwnerMethod();
                 }
+                owner.OnSave += Save;
+                owner.OnKill += Kill;
+            }
 
-                private PersistenceState state = PersistenceState.Virtual;
+            private PersistenceState state = PersistenceState.Virtual;
 
-                private List<TItem> items = new List<TItem>();
-                private List<TItem> delete = new List<TItem>();
+            private List<TItem> items = new List<TItem>();
+            private List<TItem> delete = new List<TItem>();
 
-                private void GenerateSetItemOwnerMethod()
+            private void GenerateSetItemOwnerMethod()
+            {
+                if (set_item_owner != null) return;
+
+                PropertyInfo info = typeof(TItem).GetProperty(fk_name);
+                DynamicMethod setter = new DynamicMethod(
+                        typeof(TOwner).Name + typeof(TItem).Name + "ItemOwnerSetter",
+                        null,
+                        new Type[] { typeof(TItem), typeof(TOwner) });
+                ILGenerator il = setter.GetILGenerator();
+                il.Emit(OpCodes.Ldarg_0);
+                il.Emit(OpCodes.Ldarg_1);
+                il.Emit(OpCodes.Callvirt, info.GetSetMethod());
+                il.Emit(OpCodes.Ret);
+                set_item_owner = (Action<TItem, TOwner>)setter.CreateDelegate(typeof(Action<TItem, TOwner>));
+            }
+
+            private void LazyLoad()
+            {
+                if (state == PersistenceState.Virtual)
                 {
-                    if (set_item_owner != null) return;
-
-                    PropertyInfo info = typeof(TItem).GetProperty(fk_name);
-                    DynamicMethod setter = new DynamicMethod(
-                            typeof(TOwner).Name + typeof(TItem).Name + "ItemOwnerSetter",
-                            null,
-                            new Type[] { typeof(TItem), typeof(TOwner) });
-                    ILGenerator il = setter.GetILGenerator();
-                    il.Emit(OpCodes.Ldarg_0);
-                    il.Emit(OpCodes.Ldarg_1);
-                    il.Emit(OpCodes.Callvirt, info.GetSetMethod());
-                    il.Emit(OpCodes.Ret);
-                    set_item_owner = (Action<TItem, TOwner>)setter.CreateDelegate(typeof(Action<TItem, TOwner>));
+                    Load();
+                    state = PersistenceState.Original;
                 }
+            }
 
-                private void LazyLoad()
+            public TOwner Owner { get { return owner; } }
+
+            public void Load()
+            {
+                items = load_items(owner);
+            }
+
+            private void Save(IPersistent sender)
+            {
+                if (state == PersistenceState.Virtual) return;
+                foreach (TItem item in items)
                 {
-                    if (state == PersistenceState.Virtual)
-                    {
-                        Load();
-                        state = PersistenceState.Original;
-                    }
+                    item.Save();
                 }
-
-                public void Load()
+                foreach (TItem item in delete)
                 {
-                     items = load_items(owner);
+                    item.Kill();
                 }
+            }
 
-                private void Save(IPersistent sender)
+            private void Kill(IPersistent sender)
+            {
+                Clear();
+                foreach (TItem item in delete)
                 {
-                    if (state == PersistenceState.Virtual) return;
-                    foreach (TItem item in items)
-                    {
-                        item.Save();
-                    }
-                    foreach (TItem item in delete)
-                    {
-                        item.Kill();
-                    }
+                    item.Kill();
                 }
+            }
 
-                private void Kill(IPersistent sender)
-                {
-                    Clear();                   
-                    foreach (TItem item in delete)
-                    {
-                        item.Kill();
-                    }
-                }
+            public TItem Add()
+            {
+                TItem item = Context.Current.New<TItem>();
+                Add(item);
+                return item;
+            }
 
-                public TItem Add()
+            public void Add(TItem item)
+            {
+                if (!string.IsNullOrEmpty(fk_name))
                 {
-                    LazyLoad();
-                    TItem item = Context.Current.New<TItem>();
-                    if (!string.IsNullOrEmpty(fk_name))
-                    {
-                        set_item_owner(item, owner);
-                    }
-                    items.Add(item);
-                    return item;
+                    set_item_owner(item, owner);
                 }
+                LazyLoad();
+                items.Add(item);
+            }
 
-                public void Remove(TItem item)
-                {
-                    LazyLoad();
-                    items.Remove(item);
-                    delete.Add(item);
-                }
+            public void Remove(TItem item)
+            {
+                LazyLoad();
+                items.Remove(item);
+                delete.Add(item);
+            }
 
-                public void Clear()
-                {
-                    LazyLoad();
-                    delete.AddRange(items);
-                    items.Clear();
-                }
+            public void Clear()
+            {
+                LazyLoad();
+                delete.AddRange(items);
+                items.Clear();
+            }
 
-                public List<TItem> Deleted
-                {
-                    get
-                    {
-                        return delete;
-                    }
-                }
+            public List<TItem> Deleted
+            {
+                get { return delete; }
+            }
 
-                public IEnumerator<TItem> GetEnumerator()
-                {
-                    LazyLoad();
-                    return items.GetEnumerator();
-                }
+            public List<TItem> Items
+            {
+                get { return items; }
+            }
 
-                IEnumerator IEnumerable.GetEnumerator()
-                {
-                    return GetEnumerator();
-                }
+            public IEnumerator<TItem> GetEnumerator()
+            {
+                LazyLoad();
+                return items.GetEnumerator();
+            }
+
+            IEnumerator IEnumerable.GetEnumerator()
+            {
+                return GetEnumerator();
             }
         }
     }
