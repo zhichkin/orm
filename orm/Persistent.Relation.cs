@@ -131,7 +131,11 @@ namespace zhichkin
 
             public List<TItem> Items
             {
-                get { return items; }
+                get
+                {
+                    LazyLoad();
+                    return items;
+                }
             }
 
             public IEnumerator<TItem> GetEnumerator()
