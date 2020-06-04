@@ -38,4 +38,4 @@ public sealed partial class InfoBase : EntityBase
     public string Password { set { Set<string>(value, ref password); } get { return Get<string>(ref password); } }
 }
 ```
-Vjre examples can be seen here: https://github.com/zhichkin/one-c-sharp/tree/master/src/Metadata.Model
+More examples can be seen here: https://github.com/zhichkin/one-c-sharp/tree/master/src/Metadata.Model
