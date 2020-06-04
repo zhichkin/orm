@@ -12,7 +12,7 @@ public class OrderPaymentsRegister
   DateTime DateOfEvent { get; set; }
   DocumentBase Document { get; set; }
   double Sum { get; set; }
-  int RecordingType { get; set; } // income or expense
+  int RecordType { get; set; } // income or expense
 }
 ```
 To support such kind of properties like Document in OrderPaymentsRegister class the ORM has concept of discriminator. This an integer value corresponding some class. Similar to TypeCode enum in .NET. A special lookup is used to keep bindings of Type to int. See Register class nested into UserType class. The lookup is built by Register class loading assembly containing entities marked by attributes in the Metadata.cs file. This concept is expressed in the following class: public abstract class Persistent<TKey> (see Persistent.cs file).
