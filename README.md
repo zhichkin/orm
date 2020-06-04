@@ -1,6 +1,6 @@
 # Self-tracking entities ORM solution
 
-The solution is based on [entity state machine](https://github.com/zhichkin/orm/blob/master/docs/Persistent%20Object%20State%20Machine.png). Creation of entity instances is provided by Factory, which keeps track on created entities with the help of IdentityMap. This aims to have exactly one reference within Factory class instance. The Factory is used by Context singleton class, which is in it's own turn is the entry point for the ORM usage. It is very simular to DbContext class in .NET Entity Framework.
+The solution is based on [entity state machine](https://github.com/zhichkin/orm/blob/master/docs/Persistent%20Object%20State%20Machine.png). Creation of entity instances is provided by Factory, which keeps track on created entities with the help of IdentityMap. This aims to have exactly one reference for the entity instance within Context's Factory class instance. See method New of the class UserTypeFactory for details. The Factory is used by Context singleton class, which is in it's own turn is the entry point for the ORM usage. It is very simular to DbContext class in .NET Entity Framework.
 
 The ORM provides lazy-loading by meaning of Virtual state of an entity and supports multiple valued properties. That will say that it is possible to have the following classes system:
 ```C#
