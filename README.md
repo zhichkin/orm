@@ -17,3 +17,25 @@ public class OrderPaymentsRegister
 ```
 To support such kind of properties like Document in OrderPaymentsRegister class the ORM has concept of discriminator. This an integer value corresponding some class. Similar to TypeCode enum in .NET. A special lookup is used to keep bindings of Type to int. See Register class nested into UserType class. The lookup is built by Register class loading assembly containing entities marked by attributes in the Metadata.cs file. This concept is expressed in the following class: public abstract class Persistent<TKey> (see Persistent.cs file).
 
+The ORM supports also concept of reference and value objects according to the corresponding patterns: [value object](https://martinfowler.com/bliki/ValueObject.html) and [here](https://martinfowler.com/bliki/EvansClassification.html)
+
+Example of reference entity
+```C#
+public sealed partial class InfoBase : EntityBase
+{
+    public InfoBase() : base(_mapper) { }
+    public InfoBase(Guid identity) : base(_mapper, identity) { }
+    public InfoBase(Guid identity, PersistentState state) : base(_mapper, identity, state) { }
+
+    private string server = string.Empty;
+    private string database = string.Empty;
+    private string username = string.Empty;
+    private string password = string.Empty;
+
+    public string Server { set { Set<string>(value, ref server); } get { return Get<string>(ref server); } }
+    public string Database { set { Set<string>(value, ref database); } get { return Get<string>(ref database); } }
+    public string UserName { set { Set<string>(value, ref username); } get { return Get<string>(ref username); } }
+    public string Password { set { Set<string>(value, ref password); } get { return Get<string>(ref password); } }
+}
+```
+Vjre examples can be seen here: https://github.com/zhichkin/one-c-sharp/tree/master/src/Metadata.Model
