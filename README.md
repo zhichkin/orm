@@ -23,6 +23,8 @@ Example of reference entity
 ```C#
 public sealed partial class InfoBase : EntityBase
 {
+    private static readonly IDataMapper _mapper = MetadataPersistentContext.Current.GetDataMapper(typeof(InfoBase));
+    
     public InfoBase() : base(_mapper) { }
     public InfoBase(Guid identity) : base(_mapper, identity) { }
     public InfoBase(Guid identity, PersistentState state) : base(_mapper, identity, state) { }
